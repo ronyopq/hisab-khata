@@ -59,7 +59,9 @@ export async function proxy(request: NextRequest) {
 export const config = {
   // `api` is excluded so route handlers (cron, auth callback) are not redirected
   // to /login — they authenticate themselves. Static assets stay excluded too.
+  // `robots.txt` must stay crawlable: it is static metadata, and redirecting it
+  // to /login made the crawl directives invisible to search engines.
   matcher: [
-    "/((?!api|serwist|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)",
+    "/((?!api|serwist|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|robots.txt|sitemap.xml|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)",
   ],
 };
