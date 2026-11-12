@@ -1,14 +1,9 @@
 import type { NextConfig } from "next";
-import createSerwist from "@serwist/next";
+import { withSerwist } from "@serwist/turbopack";
 import createNextIntlPlugin from "next-intl/plugin";
 
-const withSerwist = createSerwist({
-  swSrc: "sw.ts",
-  swDest: "public/sw.js",
-  disable: process.env.NODE_ENV === "development",
-  additionalPrecacheEntries: [{ url: "/offline", revision: "1" }],
-});
-
+// @serwist/next does not support Turbopack and silently produced no worker;
+// @serwist/turbopack builds it via app/serwist/[path]/route.ts instead.
 const withNextIntl = createNextIntlPlugin("./i18n.ts");
 
 const nextConfig: NextConfig = {

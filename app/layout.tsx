@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { SerwistProvider } from "@serwist/turbopack/react";
 
 const hindSiliguri = Hind_Siliguri({
   variable: "--font-hind-siliguri",
@@ -51,7 +52,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={locale} suppressHydrationWarning className={`${hindSiliguri.variable} ${inter.variable}`}>
       <body className="min-h-dvh">
         <NextIntlClientProvider messages={messages} locale={locale}>
-          <Providers>{children}</Providers>
+          <SerwistProvider swUrl="/serwist/sw.js" disable={process.env.NODE_ENV === "development"}>
+            <Providers>{children}</Providers>
+          </SerwistProvider>
         </NextIntlClientProvider>
       </body>
     </html>

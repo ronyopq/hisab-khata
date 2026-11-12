@@ -13,8 +13,12 @@ export interface QueuedTx {
     occurredAt: string;
     note?: string;
     tags: string[];
+    /** Set by the sync manager so a retried batch cannot double-insert. */
+    idempotencyKey?: string;
   };
   createdAt: string;
+  /** Idempotency key: two devices syncing the same queued item create one row. */
+  idempotencyKey?: string;
 }
 
 function openDB(): Promise<IDBDatabase> {
@@ -33,7 +37,11 @@ export async function queueTransaction(payload: QueuedTx["payload"]): Promise<vo
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).add({ payload, createdAt: new Date().toISOString() });
+    tx.objectStore(STORE).add({
+      payload,
+      createdAt: new Date().toISOString(),
+      idempotencyKey: crypto.randomUUID(),
+    });
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
@@ -64,11 +72,19 @@ export async function syncQueue(createFn: (payload: QueuedTx["payload"]) => Prom
   let failed = 0;
   for (const item of items) {
     try {
-      await createFn(item.payload);
+      await createFn({ ...item.payload, idempotencyKey: item.idempotencyKey ?? item.createdAt });
       if (item.id) await clearQueued(item.id);
       synced++;
-    } catch {
-      failed++;
+    } catch (error) {
+      // A validation error (e.g. the wallet was deleted) will never succeed on
+      // retry, so it is dropped with a count instead of blocking the queue
+      // forever. Transient network failures stay queued.
+      const message = error instanceof Error ? error.message : "";
+      const permanent = /not found|invalid|violates|does not exist|No active book/i.test(message);
+      if (permanent) {
+        if (item.id) await clearQueued(item.id);
+        failed++;
+      }
     }
   }
   return { synced, failed };

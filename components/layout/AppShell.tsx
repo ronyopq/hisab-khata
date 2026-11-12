@@ -11,6 +11,7 @@ import { SyncManager } from "@/components/pwa/SyncManager";
 import { CommandPalette } from "@/components/search/CommandPalette";
 import { AppLockProvider } from "@/components/auth/AppLockProvider";
 import { createClient } from "@/lib/supabase/client";
+import { useSearchParams } from "next/navigation";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -23,6 +24,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [wallets, setWallets] = useState<{ id: string; name: string }[]>([]);
   const [categories, setCategories] = useState<{ id: string; name_bn: string; name_en: string; type: string; icon: string | null; color: string | null }[]>([]);
   const [defaultWalletId, setDefaultWalletId] = useState<string | undefined>(undefined);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const supabase = createClient();
@@ -47,6 +49,15 @@ export function AppShell({ children }: { children: ReactNode }) {
       setCategories(c ?? []);
     })();
   }, []);
+
+  // PWA manifest shortcuts open /dashboard?add=expense|income. That parameter
+  // used to be ignored, so the shortcut just landed on the dashboard.
+  // Derived during render instead of an effect: no cascading re-render, and the
+  // sheet is already open on the first paint after following the shortcut.
+  const addParam = searchParams.get("add");
+  const quickAddFromShortcut =
+    addParam === "expense" || addParam === "income" || addParam === "transfer";
+  const sheetOpen = quickAddOpen || quickAddFromShortcut;
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -82,7 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-4 lg:pb-8 lg:px-6">{children}</main>
       </div>
       <BottomNav onFabClick={() => setQuickAddOpen(true)} />
-      <QuickAddSheet open={quickAddOpen} onOpenChange={setQuickAddOpen} wallets={wallets} categories={categories} defaultWalletId={defaultWalletId} />
+      <QuickAddSheet open={sheetOpen} onOpenChange={setQuickAddOpen} wallets={wallets} categories={categories} defaultWalletId={defaultWalletId} />
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
       <InstallPrompt />
       <SyncManager />

@@ -16,6 +16,8 @@ const txSchema = z.object({
   payee: z.string().max(200).optional(),
   tags: z.array(z.string().max(30)).max(10).default([]),
   attachmentPath: z.string().optional(),
+  /** Offline-sync key. A repeated sync of the same queued item is a no-op. */
+  idempotencyKey: z.string().max(64).optional(),
 });
 
 export async function createTransaction(input: z.infer<typeof txSchema>) {
@@ -28,6 +30,20 @@ export async function createTransaction(input: z.infer<typeof txSchema>) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+
+  // Offline replay: if this queued item was already synced (double event, two
+  // tabs, a retry after a timeout), return the existing row instead of doubling
+  // the user's spending.
+  if (input.idempotencyKey) {
+    const { data: existing } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("book_id", book.id)
+      .eq("idempotency_key", input.idempotencyKey)
+      .maybeSingle();
+    if (existing) return existing;
+  }
+
   const { data, error } = await supabase.from("transactions").insert({
     book_id: book.id,
     type: input.type,
@@ -40,6 +56,7 @@ export async function createTransaction(input: z.infer<typeof txSchema>) {
     payee: input.payee || null,
     tags: input.tags,
     attachment_path: input.attachmentPath || null,
+    idempotency_key: input.idempotencyKey ?? null,
     created_by: user.id,
   }).select().single();
   if (error) throw new Error(error.message);
