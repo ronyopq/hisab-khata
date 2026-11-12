@@ -39,6 +39,13 @@ supabase db push
 2. Env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `NEXT_PUBLIC_SITE_URL`
 3. Deploy → `ronymoney.vercel.app`
 
+> ⚠️ **Git deployment বন্ধ (ইচ্ছাকৃত):** এই project-এ `createDeployments = "disabled"`।
+> অর্থাৎ GitHub-এ push করলেই deploy হয় না। deploy করতে হবে স্পষ্টভাবে —
+> `POST https://api.vercel.com/v13/deployments` (body-তে `gitSource.ref` + `sha`),
+> অথবা `vercel redeploy <deployment-id>`। deploy করার পর যাচাই করুন:
+> `state = READY` **এবং** `readySubstate = PROMOTED` — তবেই `ronymoney.vercel.app`
+> নতুন build-এ যায় (শুধু READY হলে alias পুরোনোতেই থাকে)।
+
 ### ৫. Cron (Recurring)
 - Vercel Cron: `vercel.json`-এ `/api/cron` daily 00:00 UTC
 - Header: `Authorization: Bearer $CRON_SECRET`
@@ -65,6 +72,12 @@ Run `supabase/migrations/*.sql` in order via SQL Editor or `supabase db push`.
 
 ### 4. Deploy to Vercel
 Import GitHub repo as project `ronymoney`, add env vars, deploy.
+
+> ⚠️ **Git deployments are disabled on this project** (`createDeployments = "disabled"`).
+> A `git push` alone will not publish anything. Deploy explicitly with
+> `POST https://api.vercel.com/v13/deployments` (pass `gitSource.ref` + `sha`),
+> then confirm the result reads `state = READY` **and** `readySubstate = PROMOTED`;
+> a READY-but-not-promoted build leaves the production alias on the old commit.
 
 ### 5. Cron
 Vercel Cron calls `/api/cron` daily with `CRON_SECRET`.
