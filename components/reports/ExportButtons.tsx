@@ -22,9 +22,9 @@ export function ExportButtons({ rows, filename = "hisab-khata-export" }: { rows:
   const handleExcel = async () => {
     setLoading(true);
     try {
-      downloadExcel(`${filename}.xlsx`, rows);
+      await downloadExcel(`${filename}.xlsx`, rows);
       toast.success("Excel downloaded");
-    } catch (e) {
+    } catch {
       toast.error("Export failed");
     } finally {
       setLoading(false);

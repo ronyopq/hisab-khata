@@ -45,7 +45,12 @@ export async function getTotalBalance(): Promise<string> {
   const book = await getActiveBook();
   if (!book) return "0";
   const supabase = await createClient();
-  const { data } = await supabase.from("wallet_balances").select("balance").eq("book_id", book.id);
+  // Archived wallets keep their history but must not count towards "total balance".
+  const { data } = await supabase
+    .from("wallet_balances")
+    .select("balance, is_archived")
+    .eq("book_id", book.id)
+    .eq("is_archived", false);
   return (data ?? []).reduce((sum, r) => sum + BigInt(r.balance ?? 0), BigInt(0)).toString();
 }
 

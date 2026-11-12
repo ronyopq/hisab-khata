@@ -31,13 +31,39 @@ export async function createGoal(input: z.infer<typeof goalSchema>) {
   return data;
 }
 
+const contributionSchema = z.object({
+  goalId: z.string().uuid(),
+  amountPaisa: z.bigint().positive(),
+  walletId: z.string().uuid().nullable().optional(),
+  contributedAt: z.date(),
+});
+
 export async function addContribution(input: { goalId: string; amountPaisa: bigint; walletId?: string; contributedAt: Date }) {
+  const parsed = contributionSchema.safeParse({
+    goalId: input.goalId,
+    amountPaisa: input.amountPaisa,
+    walletId: input.walletId || null,
+    contributedAt: input.contributedAt,
+  });
+  if (!parsed.success) throw new Error("Invalid contribution");
+
+  const book = await getActiveBook();
+  if (!book) throw new Error("No active book");
   const supabase = await createClient();
+
+  const { data: goal } = await supabase
+    .from("goals")
+    .select("id, target_amount")
+    .eq("id", parsed.data.goalId)
+    .eq("book_id", book.id)
+    .maybeSingle();
+  if (!goal) throw new Error("Goal not found in this book");
+
   const { data, error } = await supabase.from("goal_contributions").insert({
-    goal_id: input.goalId,
-    amount: input.amountPaisa.toString(),
-    wallet_id: input.walletId || null,
-    contributed_at: input.contributedAt.toISOString(),
+    goal_id: parsed.data.goalId,
+    amount: parsed.data.amountPaisa.toString(),
+    wallet_id: parsed.data.walletId || null,
+    contributed_at: parsed.data.contributedAt.toISOString(),
   }).select().single();
   if (error) throw new Error(error.message);
   revalidatePath("/goals");
