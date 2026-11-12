@@ -16,6 +16,14 @@ function toError(e: unknown, fallback: string): AuthActionResult {
   return { error: e instanceof Error ? e.message : fallback };
 }
 
+/** Never fall back to localhost in production: a wrong origin breaks every email link. */
+function siteUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (configured) return configured;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
+
 export async function signInWithPassword(formData: FormData): Promise<AuthActionResult> {
   try {
     const email = emailSchema.parse(formData.get("email"));
@@ -40,7 +48,7 @@ export async function signUp(formData: FormData): Promise<AuthActionResult> {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`,
+        emailRedirectTo: `${siteUrl()}/auth/callback`,
       },
     });
     if (error) return { error: error.message };
@@ -56,7 +64,7 @@ export async function signInWithGoogle(): Promise<AuthActionResult> {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`,
+        redirectTo: `${siteUrl()}/auth/callback`,
       },
     });
     if (error) return { error: error.message };
@@ -74,7 +82,7 @@ export async function signInWithMagicLink(formData: FormData): Promise<AuthActio
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`,
+        emailRedirectTo: `${siteUrl()}/auth/callback`,
       },
     });
     if (error) return { error: error.message };
@@ -99,7 +107,8 @@ export async function requestPasswordReset(formData: FormData): Promise<AuthActi
     const email = emailSchema.parse(formData.get("email"));
     const supabase = await createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/reset-password`,
+      // Must go through /auth/callback so the recovery code is exchanged for a session.
+      redirectTo: `${siteUrl()}/auth/callback?next=/reset-password`,
     });
     if (error) return { error: error.message };
     return { success: true };
@@ -137,10 +146,17 @@ export async function deleteAccount(): Promise<AuthActionResult> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
+
+    // 1) Re-parent / remove every row a RESTRICT foreign key points at us.
+    //    Done as the user, through a SECURITY DEFINER function, so RLS still applies.
+    const { error: dataError } = await supabase.rpc("delete_my_account_data");
+    if (dataError) return { error: dataError.message };
+
+    // 2) Only then delete the auth user (service role, server-only).
     const admin = createAdminClient();
-    // Profile cascade deletes books owned, etc. via FKs. Auth user delete last.
-    await admin.from("profiles").delete().eq("id", user.id);
-    await admin.auth.admin.deleteUser(user.id);
+    const { error: authError } = await admin.auth.admin.deleteUser(user.id);
+    if (authError) return { error: authError.message };
+
     await supabase.auth.signOut();
     return { success: true };
   } catch (e) {

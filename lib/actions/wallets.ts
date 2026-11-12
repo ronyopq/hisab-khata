@@ -14,16 +14,8 @@ const walletSchema = z.object({
   icon: z.string().optional(),
 });
 
-export const WALLET_PRESETS = [
-  { name: "Cash", type: "cash" as const, provider: undefined, icon: "Banknote", color: "#10b981" },
-  { name: "Bank", type: "bank" as const, provider: undefined, icon: "Landmark", color: "#3b82f6" },
-  { name: "bKash", type: "mobile_banking" as const, provider: "bKash", icon: "Smartphone", color: "#e2136e" },
-  { name: "Nagad", type: "mobile_banking" as const, provider: "Nagad", icon: "Smartphone", color: "#f6921e" },
-  { name: "Rocket", type: "mobile_banking" as const, provider: "Rocket", icon: "Smartphone", color: "#8c3494" },
-  { name: "Upay", type: "mobile_banking" as const, provider: "Upay", icon: "Smartphone", color: "#00a651" },
-  { name: "Card", type: "card" as const, provider: undefined, icon: "CreditCard", color: "#6366f1" },
-  { name: "Savings", type: "savings" as const, provider: undefined, icon: "PiggyBank", color: "#f59e0b" },
-];
+// Presets moved to lib/wallets/presets.ts (a "use server" file may only export async functions).
+
 
 export async function createWallet(input: z.infer<typeof walletSchema>) {
   const book = await getActiveBook();

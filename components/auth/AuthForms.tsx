@@ -11,14 +11,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { signInWithPassword, signUp, signInWithGoogle, signInWithMagicLink, requestPasswordReset, updatePassword } from "@/lib/auth/actions";
 import { toast } from "sonner";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
 const signupSchema = z.object({ fullName: z.string().min(2), email: z.string().email(), password: z.string().min(6) });
 
+/** Same-site absolute paths only — blocks open-redirect via ?next=//evil.com */
+function safeNext(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) {
+    return "/dashboard";
+  }
+  return value;
+}
+
 export function LoginForm() {
   const t = useTranslations("auth");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = safeNext(searchParams.get("next"));
   const [loading, setLoading] = useState(false);
   const [magicEmail, setMagicEmail] = useState("");
   const [magicLoading, setMagicLoading] = useState(false);
@@ -35,7 +45,7 @@ export function LoginForm() {
       toast.error(result.error);
       return;
     }
-    router.push("/dashboard");
+    router.push(nextPath);
     router.refresh();
   });
 

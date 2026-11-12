@@ -19,10 +19,15 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       if (!user) return;
       const { data: profile } = await supabase.from("profiles").select("active_book_id").eq("id", user.id).single();
       if (!profile?.active_book_id) return;
+      // Strip characters that carry meaning in PostgREST's filter grammar
+      // (`,` `(` `)` separate/group filters) before interpolating into `.or()`.
+      const safeQuery = query.replace(/[^\p{L}\p{N}\s]/gu, " ").trim();
+      if (!safeQuery) { setResults([]); return; }
+      const pattern = `%${safeQuery}%`;
       const [tx, cats, wallets] = await Promise.all([
-        supabase.from("transactions").select("id, note, payee").eq("book_id", profile.active_book_id).is("deleted_at", null).or(`note.ilike.%${query}%,payee.ilike.%${query}%`).limit(5),
-        supabase.from("categories").select("id, name_bn, name_en").eq("book_id", profile.active_book_id).or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%`).limit(5),
-        supabase.from("wallets").select("id, name").eq("book_id", profile.active_book_id).ilike("name", `%${query}%`).limit(5),
+        supabase.from("transactions").select("id, note, payee").eq("book_id", profile.active_book_id).is("deleted_at", null).or(`note.ilike.${pattern},payee.ilike.${pattern}`).limit(5),
+        supabase.from("categories").select("id, name_bn, name_en").eq("book_id", profile.active_book_id).or(`name_bn.ilike.${pattern},name_en.ilike.${pattern}`).limit(5),
+        supabase.from("wallets").select("id, name").eq("book_id", profile.active_book_id).ilike("name", pattern).limit(5),
       ]);
       const items = [
         ...(tx.data ?? []).map((t) => ({ id: t.id, label: t.payee || t.note || "Transaction", type: "transaction", href: "/transactions" })),

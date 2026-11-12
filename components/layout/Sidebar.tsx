@@ -40,14 +40,24 @@ const mainNav = [
 const secondaryNav = [
   { href: "/books", icon: BookOpen, key: "books" },
   { href: "/settings", icon: Settings, key: "settings" },
-  { href: "/admin", icon: Shield, key: "admin" },
 ];
 
-export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+const adminNav = { href: "/admin", icon: Shield, key: "admin" };
+
+export function Sidebar({
+  collapsed,
+  onToggle,
+  isAdmin = false,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  isAdmin?: boolean;
+}) {
   const pathname = usePathname();
   const t = useTranslations("nav");
+  const navItems = isAdmin ? [...secondaryNav, adminNav] : secondaryNav;
 
-  const renderItem = (item: (typeof mainNav)[number]) => {
+  const renderItem = (item: { href: string; icon: typeof BookOpen; key: string }) => {
     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
     const Icon = item.icon;
     const label = t(item.key as never);
@@ -127,7 +137,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           {mainNav.map(renderItem)}
           {!collapsed && <div className="pt-4 pb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">General</div>}
-          {secondaryNav.map(renderItem)}
+          {navItems.map(renderItem)}
         </nav>
       </TooltipProvider>
 

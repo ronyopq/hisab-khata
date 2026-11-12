@@ -9,3 +9,6 @@ export const routing = defineRouting({
   defaultLocale,
   localePrefix: "never",
 });
+
+/** Cookie the app reads its locale from (see i18n.ts). */
+export const LOCALE_COOKIE = "hk-locale";

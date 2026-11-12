@@ -34,7 +34,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // Do not block pinch-zoom (WCAG 1.4.4): a ledger is mostly numbers people need to read.
+  maximumScale: 5,
   viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#10b981" },

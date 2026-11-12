@@ -43,15 +43,33 @@ export async function switchActiveBook(bookId: string) {
   revalidatePath("/books");
 }
 
+const inviteSchema = z.object({
+  bookId: z.string().uuid(),
+  email: z.string().email(),
+  role: z.enum(["owner", "editor", "viewer"]),
+});
+
 export async function inviteMember(input: { bookId: string; email: string; role: "owner" | "editor" | "viewer" }) {
+  const parsed = inviteSchema.safeParse(input);
+  if (!parsed.success) throw new Error("Invalid invitation details");
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+  // Only an owner may hand out the owner role.
+  if (parsed.data.role === "owner") {
+    const { data: membership } = await supabase
+      .from("book_members")
+      .select("role")
+      .eq("book_id", parsed.data.bookId)
+      .eq("user_id", user.id)
+      .single();
+    if (membership?.role !== "owner") throw new Error("Only a book owner can invite another owner");
+  }
   const token = randomBytes(24).toString("hex");
   const { data, error } = await supabase.from("book_invites").insert({
-    book_id: input.bookId,
-    email: input.email.toLowerCase(),
-    role: input.role,
+    book_id: parsed.data.bookId,
+    email: parsed.data.email.toLowerCase(),
+    role: parsed.data.role,
     token,
     invited_by: user.id,
   }).select().single();
@@ -88,12 +106,13 @@ export async function leaveBook(bookId: string) {
 
 export async function transferOwnership(bookId: string, newOwnerId: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  await supabase.from("book_members").update({ role: "editor" }).eq("book_id", bookId).eq("user_id", user.id);
-  await supabase.from("book_members").update({ role: "owner" }).eq("book_id", bookId).eq("user_id", newOwnerId);
-  await supabase.from("books").update({ owner_id: newOwnerId }).eq("id", bookId);
+  const { error } = await supabase.rpc("transfer_book_ownership", {
+    p_book_id: bookId,
+    p_new_owner: newOwnerId,
+  });
+  if (error) throw new Error(error.message);
   revalidatePath("/books");
+  revalidatePath("/dashboard");
 }
 
 export async function revokeInvite(inviteId: string) {

@@ -1,6 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/** Only same-site, absolute paths are allowed as a post-login destination. */
+function safeNext(value: string | null): string | null {
+  if (!value) return null;
+  if (!value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) {
+    return null;
+  }
+  return value;
+}
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -20,23 +29,37 @@ export async function proxy(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
-  const publicPaths = ["/login", "/signup", "/forgot-password", "/reset-password", "/invite"];
-  const isPublic = publicPaths.some((p) => pathname.startsWith(p));
+  const publicPaths = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+    "/invite",
+    "/auth",
+    "/offline",
+  ];
+  const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   if (!user && !isPublic && pathname !== "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", pathname);
+    url.search = "";
+    url.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(url);
   }
   if (user && (pathname === "/login" || pathname === "/signup")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const next = safeNext(request.nextUrl.searchParams.get("next"));
+    return NextResponse.redirect(new URL(next ?? "/dashboard", request.url));
   }
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)"],
+  // `api` is excluded so route handlers (cron, auth callback) are not redirected
+  // to /login — they authenticate themselves. Static assets stay excluded too.
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)",
+  ],
 };

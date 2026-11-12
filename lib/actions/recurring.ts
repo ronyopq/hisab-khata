@@ -72,60 +72,168 @@ export async function deleteRecurring(id: string) {
   revalidatePath("/recurring");
 }
 
+/**
+ * Advance one period, clamping the day so 31 Jan + 1 month = 28/29 Feb instead of
+ * rolling into March (plain Date#setMonth overflows).
+ */
 function nextDate(from: Date, frequency: string, interval: number): Date {
   const d = new Date(from);
-  if (frequency === "daily") d.setDate(d.getDate() + interval);
-  else if (frequency === "weekly") d.setDate(d.getDate() + 7 * interval);
-  else if (frequency === "monthly") d.setMonth(d.getMonth() + interval);
-  else if (frequency === "yearly") d.setFullYear(d.getFullYear() + interval);
+  if (frequency === "daily") {
+    d.setDate(d.getDate() + interval);
+  } else if (frequency === "weekly") {
+    d.setDate(d.getDate() + 7 * interval);
+  } else if (frequency === "monthly" || frequency === "yearly") {
+    const months = frequency === "monthly" ? interval : interval * 12;
+    const day = d.getDate();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + months);
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(day, lastDay));
+  }
   return d;
 }
 
-/** Cron processor: auto_create transactions + remind_only notifications. */
-export async function processRecurring() {
+/** How many periods have elapsed, plus the first un-run date (catch-up support). */
+function dueRuns(from: Date, now: Date, frequency: string, interval: number, max = 24): Date[] {
+  const runs: Date[] = [];
+  let cursor = new Date(from);
+  while (cursor <= now && runs.length < max) {
+    runs.push(new Date(cursor));
+    cursor = nextDate(cursor, frequency, interval);
+  }
+  return runs;
+}
+
+// Narrow alias so the implementation below is testable and readable.
+type Administration = ReturnType<typeof import("@/lib/supabase/server").createAdminClient>;
+
+/**
+ * Cron processor: auto_create transactions + remind_only notifications.
+ * Runs with the service-role client, so it must set created_by itself.
+ */
+export async function processRecurring(options?: { dryRun?: boolean }) {
   const { createAdminClient } = await import("@/lib/supabase/server");
-  const admin = createAdminClient();
-  const now = new Date().toISOString();
-  const { data: rules } = await admin.from("recurring_rules").select("*").eq("is_active", true).lte("next_run_at", now);
+  const admin = createAdminClient() as Administration;
+  return runRecurring(admin, options?.dryRun ?? false);
+}
+
+async function runRecurring(admin: Administration, dryRun: boolean) {
+  const now = new Date();
+  const { data: rules, error: rulesError } = await admin
+    .from("recurring_rules")
+    .select("*")
+    .eq("is_active", true)
+    .lte("next_run_at", now.toISOString());
+
+  if (rulesError) throw new Error(rulesError.message);
+
   let created = 0;
   let reminded = 0;
-  for (const r of rules ?? []) {
-    const { data: { user } } = await admin.auth.getUser().catch(() => ({ data: { user: null } }));
-    // Find book owner for created_by
-    const { data: owner } = await admin.from("book_members").select("user_id").eq("book_id", r.book_id).eq("role", "owner").limit(1).single();
-    const createdBy = owner?.user_id;
-    if (!createdBy) continue;
+  let failed = 0;
+  const errors: string[] = [];
 
-    if (r.mode === "auto_create") {
-      const { error } = await admin.from("transactions").insert({
-        book_id: r.book_id,
-        type: r.type,
-        amount: r.amount,
-        wallet_id: r.wallet_id,
-        category_id: r.category_id,
-        occurred_at: r.next_run_at,
-        note: r.note,
-        recurring_rule_id: r.id,
-        created_by: createdBy,
-      });
-      if (!error) created++;
-    } else {
-      const { data: members } = await admin.from("book_members").select("user_id").eq("book_id", r.book_id);
-      for (const m of members ?? []) {
-        await admin.from("notifications").insert({
-          user_id: m.user_id,
-          book_id: r.book_id,
-          type: "recurring_reminder",
-          title: "Recurring reminder",
-          body: r.note ?? "Recurring transaction due",
-          data: { rule_id: r.id },
-        });
+  for (const r of rules ?? []) {
+    try {
+      if (r.end_at && new Date(r.next_run_at) > new Date(r.end_at)) {
+        if (!dryRun) {
+          await admin.from("recurring_rules").update({ is_active: false }).eq("id", r.id);
+        }
+        continue;
       }
-      reminded++;
+
+      // created_by must be a real profile id (transactions.created_by is RESTRICT).
+      const { data: owner } = await admin
+        .from("book_members")
+        .select("user_id")
+        .eq("book_id", r.book_id)
+        .eq("role", "owner")
+        .limit(1)
+        .maybeSingle();
+      if (!owner?.user_id) {
+        errors.push(`${r.id}: book has no owner`);
+        failed++;
+        continue;
+      }
+
+      // Missed periods are caught up (bounded), so a cron outage doesn't lose money data.
+      const runs = dueRuns(new Date(r.next_run_at), now, r.frequency, r.interval);
+
+      if (r.mode === "auto_create") {
+        for (const run of runs) {
+          // Idempotency: a transaction already exists for this period?
+          const { data: existing } = await admin
+            .from("transactions")
+            .select("id")
+            .eq("recurring_rule_id", r.id)
+            .eq("occurred_at", run.toISOString())
+            .is("deleted_at", null)
+            .maybeSingle();
+          if (existing) continue;
+
+          const { error } = await admin.from("transactions").insert({
+            book_id: r.book_id,
+            type: r.type,
+            amount: r.amount,
+            wallet_id: r.wallet_id,
+            category_id: r.category_id,
+            occurred_at: run.toISOString(),
+            note: r.note,
+            recurring_rule_id: r.id,
+            created_by: owner.user_id,
+          });
+          if (error) {
+            errors.push(`${r.id}: ${error.message}`);
+            failed++;
+            break; // do not advance the cursor on failure
+          }
+          created++;
+        }
+      } else {
+        const { data: members } = await admin.from("book_members").select("user_id").eq("book_id", r.book_id);
+        const day = now.toISOString().slice(0, 10);
+        for (const m of members ?? []) {
+          if (!dryRun) {
+            await admin.from("notifications").upsert(
+              {
+                user_id: m.user_id,
+                book_id: r.book_id,
+                type: "recurring_reminder",
+                title: "Recurring reminder",
+                body: r.note ?? "Recurring transaction due",
+                data: { rule_id: r.id },
+                dedupe_key: `recurring:${r.id}:${day}`,
+              },
+              { onConflict: "user_id,dedupe_key", ignoreDuplicates: true }
+            );
+          }
+        }
+        reminded++;
+      }
+
+      if (!dryRun) {
+        // Only advance once the work for this rule succeeded.
+        const next = nextDate(new Date(r.next_run_at), r.frequency, r.interval);
+        const past = runs.length > 0 ? runs[runs.length - 1] : new Date(r.next_run_at);
+        const advanced = runs.length > 0
+          ? nextDate(past, r.frequency, r.interval)
+          : next;
+        const shouldDeactivate = r.end_at && advanced > new Date(r.end_at);
+        await admin
+          .from("recurring_rules")
+          .update({ next_run_at: advanced.toISOString(), is_active: shouldDeactivate ? false : true })
+          .eq("id", r.id);
+      }
+    } catch (e) {
+      failed++;
+      errors.push(`${r.id}: ${e instanceof Error ? e.message : "unknown error"}`);
     }
-    const next = nextDate(new Date(r.next_run_at), r.frequency, r.interval);
-    const shouldDeactivate = r.end_at && next > new Date(r.end_at);
-    await admin.from("recurring_rules").update({ next_run_at: next.toISOString(), is_active: shouldDeactivate ? false : true }).eq("id", r.id);
   }
-  return { created, reminded, processed: rules?.length ?? 0 };
+
+  return {
+    created,
+    reminded,
+    failed,
+    processed: rules?.length ?? 0,
+    errors: errors.slice(0, 10),
+  };
 }

@@ -16,7 +16,8 @@
     "next": "পরবর্তী",
     "confirm": "নিশ্চিত করুন",
     "empty": "এখানে এখনো কিছু নেই",
-    "viewAll": "সব দেখুন"
+    "viewAll": "সব দেখুন",
+    "language": "ভাষা"
   },
   "nav": {
     "home": "হোম",
@@ -39,7 +40,9 @@
     "morning": "শুভ সকাল",
     "afternoon": "শুভ দুপুর",
     "evening": "শুভ সন্ধ্যা",
-    "night": "শুভ রাত্রি"
+    "night": "শুভ রাত্রি",
+    "switchBook": "বই পরিবর্তন",
+    "manageBooks": "বই পরিচালনা"
   },
   "dashboard": {
     "title": "ড্যাশবোর্ড",

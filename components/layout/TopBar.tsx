@@ -14,22 +14,32 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getGreeting } from "@/lib/format/date";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { setLocale } from "@/lib/i18n/actions";
 
 export function TopBar({
-  userName = "ব্যবহারকারী",
+  userName,
+  activeBookId,
   hideAmounts,
   onToggleHide,
   onSearchClick,
 }: {
   userName?: string;
+  activeBookId?: string;
   hideAmounts?: boolean;
   onToggleHide?: () => void;
   onSearchClick?: () => void;
 }) {
   const t = useTranslations("greeting");
+  const tc = useTranslations("common");
+  const locale = useLocale();
+  const router = useRouter();
+  const [isSwitchingLocale, startLocaleTransition] = useTransition();
+  const [books, setBooks] = useState<{ id: string; name: string }[]>([]);
   const { theme, setTheme } = useTheme();
   const [greeting, setGreeting] = useState<"morning" | "afternoon" | "evening" | "night">("morning");
   const [unread, setUnread] = useState(0);
@@ -42,19 +52,45 @@ export function TopBar({
       if (!user) return;
       const { count } = await supabase.from("notifications").select("*", { count: "exact", head: true }).eq("user_id", user.id).is("read_at", null);
       setUnread(count ?? 0);
+      const { data: memberships } = await supabase
+        .from("book_members")
+        .select("book_id, books:book_id(name)")
+        .eq("user_id", user.id);
+      setBooks(
+        (memberships ?? []).map((m) => ({
+          id: m.book_id as string,
+          name: ((m.books as unknown as { name: string } | null)?.name) ?? "—",
+        }))
+      );
     })();
   }, []);
+
+  const switchBook = async (bookId: string) => {
+    if (!bookId || bookId === activeBookId) return;
+    const { switchActiveBook } = await import("@/lib/actions/books");
+    await switchActiveBook(bookId);
+    router.refresh();
+  };
+
+  const toggleLocale = () => {
+    startLocaleTransition(async () => {
+      await setLocale(locale === "bn" ? "en" : "bn");
+      router.refresh();
+    });
+  };
+
+  const currentBookName = books.find((b) => b.id === activeBookId)?.name;
 
   return (
     <header className="sticky top-0 z-30 glass border-b safe-top">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
         <div className="flex items-center gap-3 lg:hidden">
           <Avatar className="h-10 w-10">
-            <AvatarFallback>{userName.slice(0, 1)}</AvatarFallback>
+            <AvatarFallback>{(userName ?? tc("appName")).slice(0, 1)}</AvatarFallback>
           </Avatar>
           <div className="leading-tight">
             <p className="text-xs text-muted-foreground">{t(greeting)}</p>
-            <p className="text-sm font-semibold">{userName}</p>
+            <p className="text-sm font-semibold">{userName ?? tc("appName")}</p>
           </div>
         </div>
 
@@ -70,22 +106,36 @@ export function TopBar({
         <div className="ml-auto flex items-center gap-1.5">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="hidden sm:flex gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-primary" />
-                ব্যক্তিগত / Personal
-                <ChevronDown className="h-4 w-4 opacity-50" />
+              <Button variant="ghost" className="hidden sm:flex gap-1.5 max-w-[220px]">
+                <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+                <span className="truncate">{currentBookName ?? tc("appName")}</span>
+                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Switch Book</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("switchBook")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>ব্যক্তিগত / Personal</DropdownMenuItem>
-              <DropdownMenuItem>+ New Book</DropdownMenuItem>
+              {books.map((b) => (
+                <DropdownMenuItem key={b.id} onClick={() => switchBook(b.id)}>
+                  <span className={b.id === activeBookId ? "font-semibold" : undefined}>{b.name}</span>
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/books">{t("manageBooks")}</Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button variant="ghost" size="sm" className="hidden sm:flex font-semibold">
-            বাংলা / EN
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hidden sm:flex font-semibold"
+            onClick={toggleLocale}
+            disabled={isSwitchingLocale}
+            aria-label={tc("language")}
+          >
+            {locale === "bn" ? "বাংলা" : "English"}
           </Button>
 
           <DropdownMenu>
@@ -120,7 +170,7 @@ export function TopBar({
 
           <div className="hidden lg:block">
             <Avatar className="h-9 w-9 cursor-pointer">
-              <AvatarFallback>{userName.slice(0, 1)}</AvatarFallback>
+              <AvatarFallback>{(userName ?? tc("appName")).slice(0, 1)}</AvatarFallback>
             </Avatar>
           </div>
         </div>

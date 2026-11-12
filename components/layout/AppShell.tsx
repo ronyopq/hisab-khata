@@ -16,6 +16,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [hideAmounts, setHideAmounts] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [userName, setUserName] = useState<string | undefined>(undefined);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [activeBook, setActiveBook] = useState<string | undefined>(undefined);
   const [wallets, setWallets] = useState<{ id: string; name: string }[]>([]);
   const [categories, setCategories] = useState<{ id: string; name_bn: string; name_en: string; type: string; icon: string | null; color: string | null }[]>([]);
   const [defaultWalletId, setDefaultWalletId] = useState<string | undefined>(undefined);
@@ -25,9 +28,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: profile } = await supabase.from("profiles").select("active_book_id, default_wallet_id").eq("id", user.id).single();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("active_book_id, default_wallet_id, full_name, is_admin")
+        .eq("id", user.id)
+        .single();
+      setUserName(profile?.full_name ?? user.email?.split("@")[0]);
+      setIsAdmin(Boolean(profile?.is_admin));
       if (!profile?.active_book_id) return;
       setDefaultWalletId(profile.default_wallet_id ?? undefined);
+      setActiveBook(profile.active_book_id);
       const [{ data: w }, { data: c }] = await Promise.all([
         supabase.from("wallets").select("id, name").eq("book_id", profile.active_book_id).eq("is_archived", false).order("sort_order"),
         supabase.from("categories").select("id, name_bn, name_en, type, icon, color").eq("book_id", profile.active_book_id).eq("is_archived", false).order("sort_order"),
@@ -59,9 +69,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh bg-background">
       <OfflineBanner />
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} isAdmin={isAdmin} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar hideAmounts={hideAmounts} onToggleHide={() => setHideAmounts((h) => !h)} onSearchClick={() => setCommandOpen(true)} />
+        <TopBar
+          userName={userName}
+          activeBookId={activeBook}
+          hideAmounts={hideAmounts}
+          onToggleHide={() => setHideAmounts((h) => !h)}
+          onSearchClick={() => setCommandOpen(true)}
+        />
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-4 lg:pb-8 lg:px-6">{children}</main>
       </div>
       <BottomNav onFabClick={() => setQuickAddOpen(true)} />

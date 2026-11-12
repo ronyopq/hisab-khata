@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createWallet, WALLET_PRESETS } from "@/lib/actions/wallets";
+import { createWallet } from "@/lib/actions/wallets";
+import { WALLET_PRESETS } from "@/lib/wallets/presets";
 import { parseMoneyToPaisa } from "@/lib/format/money";
 import { toast } from "sonner";
 
