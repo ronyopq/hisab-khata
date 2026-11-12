@@ -11,8 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ExportButtons } from "@/components/reports/ExportButtons";
 import { ImportWizard } from "@/components/reports/ImportWizard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { changePassword, deleteAccount } from "@/lib/auth/actions";
-import { Input } from "@/components/ui/input";
+import { ChangePasswordForm, DeleteAccountForm } from "@/components/auth/SettingsAuthForms";
 
 export default async function SettingsPage() {
   const t = await getTranslations("settings");
@@ -66,10 +65,7 @@ export default async function SettingsPage() {
       <Card>
         <CardHeader><CardTitle>Change Password</CardTitle></CardHeader>
         <CardContent>
-          <form action={changePassword} className="flex gap-2">
-            <Input name="newPassword" type="password" placeholder="New password (min 6 chars)" required />
-            <Button type="submit">Change</Button>
-          </form>
+          <ChangePasswordForm />
         </CardContent>
       </Card>
 
@@ -88,9 +84,7 @@ export default async function SettingsPage() {
         <CardHeader><CardTitle className="text-destructive">{t("deleteAccount")}</CardTitle></CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">Delete your account and all data. This cannot be undone.</p>
-          <form action={deleteAccount} className="mt-3">
-            <Button variant="destructive" type="submit">Delete Account</Button>
-          </form>
+          <DeleteAccountForm />
         </CardContent>
       </Card>
     </div>
