@@ -6,7 +6,7 @@ import { Eye, EyeOff, Plus, ArrowUpRight, ArrowLeftRight, HandCoins } from "luci
 import { formatMoney } from "@/lib/format/money";
 import { cn } from "@/lib/utils";
 
-export function HeroBalance({ total, onQuickAction }: { total: bigint; onQuickAction?: (action: string) => void }) {
+export function HeroBalance({ total, onQuickAction }: { total: string; onQuickAction?: (action: string) => void }) {
   const [hidden, setHidden] = useState(false);
   const mv = useMotionValue(0);
   const spring = useSpring(mv, { stiffness: 60, damping: 20 });

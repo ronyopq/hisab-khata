@@ -41,12 +41,12 @@ export async function getMonthlyTrend(months = 6) {
   return (data ?? []) as { month: string; income: string; expense: string }[];
 }
 
-export async function getTotalBalance() {
+export async function getTotalBalance(): Promise<string> {
   const book = await getActiveBook();
-  if (!book) return BigInt(0);
+  if (!book) return "0";
   const supabase = await createClient();
   const { data } = await supabase.from("wallet_balances").select("balance").eq("book_id", book.id);
-  return (data ?? []).reduce((sum, r) => sum + BigInt(r.balance), BigInt(0));
+  return (data ?? []).reduce((sum, r) => sum + BigInt(r.balance ?? 0), BigInt(0)).toString();
 }
 
 export async function getUpcomingRecurring() {
