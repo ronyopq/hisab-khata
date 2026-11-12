@@ -97,7 +97,8 @@
     "notePlaceholder": "Add details (optional)",
     "attachment": "Add receipt",
     "save": "Save",
-    "saved": "Saved successfully"
+    "saved": "Saved successfully",
+    "savedOffline": "Saved offline — will sync when back online"
   },
   "auth": {
     "login": "Login",
@@ -137,5 +138,9 @@
     "invalidEmail": "Enter a valid email",
     "minLength": "Must be at least {min} characters",
     "amountPositive": "Amount must be greater than 0"
+  },
+  "sync": {
+    "synced": "{count} transaction(s) synced",
+    "syncFailed": "{count} failed to sync — will retry"
   }
 }

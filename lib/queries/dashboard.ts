@@ -76,14 +76,16 @@ export async function getGoalsProgress() {
   const book = await getActiveBook();
   if (!book) return [];
   const supabase = await createClient();
-  const { data: goals } = await supabase.from("goals").select("*").eq("book_id", book.id).eq("status", "active");
-  const result = [];
-  for (const g of goals ?? []) {
-    const { data: contribs } = await supabase.from("goal_contributions").select("amount").eq("goal_id", g.id);
-    const saved = (contribs ?? []).reduce((s, c) => s + BigInt(c.amount), BigInt(0));
-    result.push({ ...g, saved });
+  // Single query for all contributions (was N+1: one query per goal).
+  const [{ data: goals }, { data: contribs }] = await Promise.all([
+    supabase.from("goals").select("*").eq("book_id", book.id).eq("status", "active"),
+    supabase.from("goal_contributions").select("goal_id, amount"),
+  ]);
+  const savedByGoal = new Map<string, bigint>();
+  for (const c of contribs ?? []) {
+    savedByGoal.set(c.goal_id, (savedByGoal.get(c.goal_id) ?? BigInt(0)) + BigInt(c.amount));
   }
-  return result;
+  return (goals ?? []).map((g) => ({ ...g, saved: savedByGoal.get(g.id) ?? BigInt(0) }));
 }
 
 export async function getBudgetProgress() {

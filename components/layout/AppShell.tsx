@@ -7,6 +7,7 @@ import { TopBar } from "./TopBar";
 import { QuickAddSheet } from "./QuickAddSheet";
 import { OfflineBanner } from "@/components/pwa/OfflineBanner";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { SyncManager } from "@/components/pwa/SyncManager";
 import { CommandPalette } from "@/components/search/CommandPalette";
 import { createClient } from "@/lib/supabase/client";
 
@@ -67,6 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <QuickAddSheet open={quickAddOpen} onOpenChange={setQuickAddOpen} wallets={wallets} categories={categories} defaultWalletId={defaultWalletId} />
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
       <InstallPrompt />
+      <SyncManager />
     </div>
   );
 }

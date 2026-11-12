@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createTransaction } from "@/lib/actions/transactions";
 import { parseMoneyToPaisa, formatMoney } from "@/lib/format/money";
 import { DynamicIcon } from "@/components/forms/IconPicker";
+import { queueTransaction } from "@/lib/offline/queue";
 import { toast } from "sonner";
 
 type TxType = "expense" | "income" | "transfer";
@@ -58,17 +59,41 @@ export function QuickAddSheet({ open, onOpenChange, wallets, categories, default
     if (type === "transfer" && (!toWalletId || toWalletId === walletId)) { toast.error("Select destination wallet"); return; }
     if (type !== "transfer" && !categoryId) { toast.error("Select category"); return; }
     setLoading(true);
+    const payload = {
+      type,
+      amountPaisa: paisa,
+      walletId,
+      toWalletId: type === "transfer" ? toWalletId : undefined,
+      categoryId: type === "transfer" ? null : categoryId,
+      occurredAt: new Date(date + "T12:00:00"),
+      note: note || undefined,
+      tags: [] as string[],
+    };
     try {
-      await createTransaction({
-        type,
-        amountPaisa: paisa,
-        walletId,
-        toWalletId: type === "transfer" ? toWalletId : undefined,
-        categoryId: type === "transfer" ? null : categoryId,
-        occurredAt: new Date(date + "T12:00:00"),
-        note: note || undefined,
-        tags: [],
-      });
+      // Offline-first: if no connection, queue to IndexedDB and sync later.
+      if (!navigator.onLine) {
+        await queueTransaction({
+          type: payload.type,
+          amountPaisa: paisa.toString(),
+          walletId,
+          toWalletId: payload.toWalletId,
+          categoryId: payload.categoryId,
+          occurredAt: payload.occurredAt.toISOString(),
+          note: payload.note,
+          tags: [],
+        });
+        setSaved(true);
+        navigator.vibrate?.([10, 50, 10]);
+        toast.success(t("savedOffline"));
+        setTimeout(() => {
+          setSaved(false);
+          setAmount("");
+          setNote("");
+          onOpenChange(false);
+        }, 900);
+        return;
+      }
+      await createTransaction(payload);
       setSaved(true);
       navigator.vibrate?.([10, 50, 10]);
       toast.success(t("saved"));
@@ -79,6 +104,25 @@ export function QuickAddSheet({ open, onOpenChange, wallets, categories, default
         onOpenChange(false);
       }, 900);
     } catch (e) {
+      // Network failure mid-save → queue it so nothing is lost.
+      if (e instanceof Error && /fetch|network|offline|failed to fetch/i.test(e.message)) {
+        try {
+          await queueTransaction({
+            type: payload.type,
+            amountPaisa: paisa.toString(),
+            walletId,
+            toWalletId: payload.toWalletId,
+            categoryId: payload.categoryId,
+            occurredAt: payload.occurredAt.toISOString(),
+            note: payload.note,
+            tags: [],
+          });
+          toast.success(t("savedOffline"));
+          setSaved(true);
+          setTimeout(() => { setSaved(false); setAmount(""); setNote(""); onOpenChange(false); }, 900);
+          return;
+        } catch { /* fall through to error toast */ }
+      }
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
       setLoading(false);
