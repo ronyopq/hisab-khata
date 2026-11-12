@@ -68,7 +68,8 @@
     "thisMonth": "এই মাস",
     "lastMonth": "গত মাস",
     "thisYear": "এই বছর",
-    "customRange": "কাস্টম রেঞ্জ"
+    "customRange": "কাস্টম রেঞ্জ",
+    "viewAll": "সব দেখুন"
   },
   "transactions": {
     "title": "লেনদেন",

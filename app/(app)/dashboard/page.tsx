@@ -1,11 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { getDashboardSummary, getMonthlyTrend, getTotalBalance, getUpcomingRecurring, getDebtsSummary, getGoalsProgress, getBudgetProgress, getRecentTransactions } from "@/lib/queries/dashboard";
 import { getWallets } from "@/lib/queries/wallets";
-import { formatMoney } from "@/lib/format/money";
+import { formatMoney, pctChange } from "@/lib/format/money";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { HeroBalance, StatCard, pctChange } from "@/components/dashboard/HeroBalance";
+import { HeroBalance, StatCard } from "@/components/dashboard/HeroBalance";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
 const CategoryDonut = dynamic(() => import("@/components/charts/CategoryDonut").then((m) => m.CategoryDonut), { loading: () => <Skeleton className="h-52 w-full" /> });
@@ -14,7 +14,6 @@ const DailyAreaChart = dynamic(() => import("@/components/charts/TrendCharts").t
 import { EmptyState } from "@/components/layout/EmptyState";
 import { TransactionRow } from "@/components/transactions/TransactionRow";
 import { formatDate } from "@/lib/format/date";
-import { motion } from "motion/react";
 import Link from "next/link";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {

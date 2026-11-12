@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "motion/react";
 import { Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -73,3 +73,12 @@ export function parseMoneyToPaisa(input: string): bigint | null {
   if (!Number.isFinite(num) || num < 0) return null;
   return BigInt(Math.round(num * 100));
 }
+
+/** Percentage change vs previous period. Server-safe (no "use client"). */
+export function pctChange(current: bigint, previous: bigint): { pct: string; up: boolean } {
+  if (previous === BigInt(0)) return { pct: current === BigInt(0) ? "০%" : "+১০০%", up: current > BigInt(0) };
+  const diff = Number(current - previous) / Number(previous) * 100;
+  const abs = Math.abs(diff).toFixed(0);
+  const bn = abs.replace(/[0-9]/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
+  return { pct: `${diff >= 0 ? "+" : "−"}${bn}%`, up: diff >= 0 };
+}

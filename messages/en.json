@@ -68,7 +68,8 @@
     "thisMonth": "This Month",
     "lastMonth": "Last Month",
     "thisYear": "This Year",
-    "customRange": "Custom Range"
+    "customRange": "Custom Range",
+    "viewAll": "View all"
   },
   "transactions": {
     "title": "Transactions",
