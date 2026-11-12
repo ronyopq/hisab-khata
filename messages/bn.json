@@ -72,7 +72,9 @@
     "lastMonth": "গত মাস",
     "thisYear": "এই বছর",
     "customRange": "কাস্টম রেঞ্জ",
-    "viewAll": "সব দেখুন"
+    "viewAll": "সব দেখুন",
+    "from": "শুরু",
+    "to": "শেষ"
   },
   "transactions": {
     "title": "লেনদেন",
@@ -83,7 +85,8 @@
     "empty": "কোনো লেনদেন পাওয়া যায়নি",
     "emptyCta": "প্রথম লেনদেন যোগ করুন",
     "undoDelete": "মুছে ফেলা হয়েছে",
-    "undo": "আনডু"
+    "undo": "আনডু",
+    "searchAction": "খুঁজুন"
   },
   "quickAdd": {
     "title": "নতুন লেনদেন",
@@ -134,7 +137,8 @@
     "appLock": "অ্যাপ লক",
     "export": "এক্সপোর্ট",
     "import": "ইমপোর্ট",
-    "deleteAccount": "অ্যাকাউন্ট মুছুন"
+    "deleteAccount": "অ্যাকাউন্ট মুছুন",
+    "saved": "সেভ হয়েছে"
   },
   "validation": {
     "required": "এই ঘরটি পূরণ করা বাধ্যতামূলক",

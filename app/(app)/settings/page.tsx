@@ -12,6 +12,8 @@ import { ExportButtons } from "@/components/reports/ExportButtons";
 import { ImportWizard } from "@/components/reports/ImportWizard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ChangePasswordForm, DeleteAccountForm } from "@/components/auth/SettingsAuthForms";
+import { PreferencesForm } from "@/components/settings/PreferencesForm";
+import { AppLockSettings } from "@/components/auth/AppLockProvider";
 
 export default async function SettingsPage() {
   const t = await getTranslations("settings");
@@ -27,38 +29,24 @@ export default async function SettingsPage() {
 
       <Card>
         <CardHeader><CardTitle>{t("language")}</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>{t("language")}</Label>
-            <Select defaultValue={profile?.locale ?? "bn"}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="bn">বাংলা</SelectItem><SelectItem value="en">English</SelectItem></SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>{t("digitStyle")}</Label>
-            <Select defaultValue={profile?.digit_style ?? "bengali"}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="bengali">{t("bengaliDigits")}</SelectItem><SelectItem value="latin">{t("latinDigits")}</SelectItem></SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>{t("grouping")}</Label>
-            <Select defaultValue={profile?.number_grouping ?? "lakh"}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="lakh">{t("lakh")}</SelectItem><SelectItem value="international">{t("international")}</SelectItem></SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center justify-between"><Label>{t("hideAmounts")}</Label><Switch defaultChecked={profile?.hide_amounts ?? false} /></div>
-          <div className="space-y-2">
-            <Label>{t("defaultWallet")}</Label>
-            <Select defaultValue={profile?.default_wallet_id ?? ""}>
-              <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{wallets.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center justify-between"><Label>{t("appLock")} (4-digit PIN, 5 min)</Label><Switch /></div>
-          <p className="text-xs text-muted-foreground">TOTP 2FA: Supabase MFA enabled — enroll via Supabase Auth (mfa_totp_enroll_enabled=true). App-lock PIN stored hashed locally.</p>
+        <CardContent>
+          <PreferencesForm
+            initial={{
+              locale: (profile?.locale ?? "bn") as "bn" | "en",
+              digitStyle: (profile?.digit_style ?? "bengali") as "bengali" | "latin",
+              numberGrouping: (profile?.number_grouping ?? "lakh") as "lakh" | "international",
+              hideAmounts: Boolean(profile?.hide_amounts),
+              defaultWalletId: profile?.default_wallet_id ?? null,
+            }}
+            wallets={(wallets ?? []).map((w) => ({ id: w.id, name: w.name }))}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>{t("appLock")}</CardTitle></CardHeader>
+        <CardContent>
+          <AppLockSettings />
         </CardContent>
       </Card>
 

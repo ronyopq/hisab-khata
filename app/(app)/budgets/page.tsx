@@ -24,7 +24,16 @@ export default async function BudgetsPage() {
         </Dialog>
       </div>
       {budgets.length === 0 ? (
-        <EmptyState title="No budgets" description="Set monthly overall or per-category budgets with 80%/100% alerts." actionLabel="Add Budget" />
+        <EmptyState
+          title="No budgets"
+          description="Set monthly overall or per-category budgets with 80%/100% alerts."
+          actionSlot={
+            <Dialog>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Budget</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>New Budget</DialogTitle></DialogHeader><BudgetForm categories={categories as never} /></DialogContent>
+            </Dialog>
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {budgets.map((b) => {

@@ -32,7 +32,16 @@ export default async function LoansPage() {
       </div>
 
       {debts.length === 0 ? (
-        <EmptyState title="No loans" description="Track পাওনা (lent) and দেনা (borrowed) with partial repayments." actionLabel="Add Loan" />
+        <EmptyState
+          title="No loans"
+          description="Track পাওনা (lent) and দেনা (borrowed) with partial repayments."
+          actionSlot={
+            <Dialog>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Loan</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>New Loan</DialogTitle></DialogHeader><DebtForm contacts={contacts as never} wallets={wallets as never} /></DialogContent>
+            </Dialog>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {debts.map((d) => {

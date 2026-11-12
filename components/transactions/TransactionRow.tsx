@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { formatMoney } from "@/lib/format/money";
 import { DynamicIcon } from "@/components/forms/IconPicker";
@@ -27,7 +27,9 @@ export function TransactionRow({ tx, selected, onSelect, onEdit }: { tx: TxRowDa
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [longPress, setLongPress] = useState(false);
-  let pressTimer: ReturnType<typeof setTimeout> | null = null;
+  // A ref, not a render-scoped variable: the timer must survive re-renders and
+  // be cleared on the right element (a local `let` broke long-press entirely).
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const amount = typeof tx.amount === "bigint" ? tx.amount : BigInt(tx.amount);
   const catName = tx.categories ? tx.categories.name_bn : tx.type === "transfer" ? "ট্রান্সফার" : "—";
@@ -58,10 +60,10 @@ export function TransactionRow({ tx, selected, onSelect, onEdit }: { tx: TxRowDa
   return (
     <div
       className="relative overflow-hidden rounded-2xl"
-      onTouchStart={() => { pressTimer = setTimeout(() => { setLongPress(true); navigator.vibrate?.(15); }, 500); }}
-      onTouchEnd={() => { if (pressTimer) clearTimeout(pressTimer); }}
-      onMouseDown={() => { pressTimer = setTimeout(() => setLongPress(true), 500); }}
-      onMouseUp={() => { if (pressTimer) clearTimeout(pressTimer); }}
+      onTouchStart={() => { pressTimer.current = setTimeout(() => { setLongPress(true); navigator.vibrate?.(15); }, 500); }}
+      onTouchEnd={() => { if (pressTimer.current) clearTimeout(pressTimer.current); }}
+      onMouseDown={() => { pressTimer.current = setTimeout(() => setLongPress(true), 500); }}
+      onMouseUp={() => { if (pressTimer.current) clearTimeout(pressTimer.current); }}
     >
       {/* Swipe actions */}
       <div className="absolute inset-0 flex items-center justify-end gap-2 pr-4 bg-destructive/10">

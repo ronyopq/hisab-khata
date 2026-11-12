@@ -26,7 +26,16 @@ export default async function RecurringPage() {
         </Dialog>
       </div>
       {rules.length === 0 ? (
-        <EmptyState title="No recurring rules" description="Salary, rent, bills, subscriptions — auto-create or remind." actionLabel="Add Recurring" />
+        <EmptyState
+          title="No recurring rules"
+          description="Salary, rent, bills, subscriptions — auto-create or remind."
+          actionSlot={
+            <Dialog>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Recurring</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>New Recurring</DialogTitle></DialogHeader><RecurringForm wallets={wallets as never} categories={categories as never} /></DialogContent>
+            </Dialog>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {rules.map((r) => (

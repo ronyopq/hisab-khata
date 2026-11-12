@@ -57,7 +57,7 @@ export function InstallPrompt() {
             <Drawer.Title className="text-center font-semibold">Add to Home Screen</Drawer.Title>
             <div className="mt-4 space-y-3 text-sm">
               <p className="flex items-center gap-2"><Share className="h-5 w-5 text-primary" /> Tap Share in Safari</p>
-              <p>Scroll down and tap <strong>"Add to Home Screen"</strong></p>
+              <p>Scroll down and tap <strong>&ldquo;Add to Home Screen&rdquo;</strong></p>
               <p>Tap <strong>Add</strong> — Hisab Khata will work like a native app.</p>
             </div>
             <Button className="mt-5 w-full" onClick={() => setShowIOSGuide(false)}>Got it</Button>

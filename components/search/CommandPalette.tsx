@@ -12,11 +12,14 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   const [results, setResults] = useState<{ id: string; label: string; type: string; href: string }[]>([]);
 
   useEffect(() => {
-    if (!query || query.length < 2) { setResults([]); return; }
+    let cancelled = false;
     const supabase = createClient();
     (async () => {
+      if (!query || query.length < 2) return;
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      // Late responses must not overwrite results for a newer query.
+      if (cancelled) return;
       const { data: profile } = await supabase.from("profiles").select("active_book_id").eq("id", user.id).single();
       if (!profile?.active_book_id) return;
       // Strip characters that carry meaning in PostgREST's filter grammar
@@ -34,8 +37,9 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
         ...(cats.data ?? []).map((c) => ({ id: c.id, label: `${c.name_bn} / ${c.name_en}`, type: "category", href: "/categories" })),
         ...(wallets.data ?? []).map((w) => ({ id: w.id, label: w.name, type: "wallet", href: "/wallets" })),
       ];
-      setResults(items);
+      if (!cancelled) setResults(items.length ? items : []);
     })();
+    return () => { cancelled = true; };
   }, [query]);
 
   const pages = [

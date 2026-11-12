@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/layout/EmptyState";
 
 export default async function GoalsPage() {
   const t = await getTranslations("nav");
-  const goals = await getGoals();
+  const { goals, generatedAt } = await getGoals();
 
   return (
     <div className="space-y-5">
@@ -24,12 +24,21 @@ export default async function GoalsPage() {
         </Dialog>
       </div>
       {goals.length === 0 ? (
-        <EmptyState title="No goals" description="Set savings targets with deadlines and monthly requirements." actionLabel="Add Goal" />
+        <EmptyState
+          title="No goals"
+          description="Set savings targets with deadlines and monthly requirements."
+          actionSlot={
+            <Dialog>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Goal</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>New Goal</DialogTitle></DialogHeader><GoalForm /></DialogContent>
+            </Dialog>
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {goals.map((g) => {
             const pct = g.target_amount > BigInt(0) ? Number(g.saved * BigInt(100) / BigInt(g.target_amount)) : 0;
-            const monthsLeft = g.deadline ? Math.max(1, Math.ceil((new Date(g.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30))) : null;
+            const monthsLeft = g.deadline ? Math.max(1, Math.ceil((new Date(g.deadline).getTime() - new Date(generatedAt).getTime()) / (1000 * 60 * 60 * 24 * 30))) : null;
             const monthlyReq = monthsLeft ? (BigInt(g.target_amount) - g.saved) / BigInt(monthsLeft) : null;
             return (
               <Card key={g.id}>

@@ -31,7 +31,16 @@ export default async function BooksPage() {
       </div>
 
       {myBooks.length === 0 ? (
-        <EmptyState title="No books" description="Create your first book." actionLabel="New Book" />
+        <EmptyState
+          title="No books"
+          description="Create your first book."
+          actionSlot={
+            <Dialog>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> New Book</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>New Book</DialogTitle></DialogHeader><BookForm /></DialogContent>
+            </Dialog>
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {myBooks.map((m) => {

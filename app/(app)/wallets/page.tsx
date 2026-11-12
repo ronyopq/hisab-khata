@@ -18,13 +18,26 @@ export default async function WalletsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("wallets")}</h1>
         <Dialog>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Wallet</Button></DialogTrigger>
+          <DialogTrigger asChild>
+            <Button><Plus className="h-4 w-4" /> Add Wallet</Button>
+          </DialogTrigger>
           <DialogContent><DialogHeader><DialogTitle>New Wallet</DialogTitle></DialogHeader><WalletForm /></DialogContent>
         </Dialog>
       </div>
 
       {wallets.length === 0 ? (
-        <EmptyState title="No wallets yet" description="Add Cash, Bank, bKash, Nagad, Rocket, Upay, Card or Savings." actionLabel="Add Wallet" />
+        <EmptyState
+          title="No wallets yet"
+          description="Add Cash, Bank, bKash, Nagad, Rocket, Upay, Card or Savings."
+          actionSlot={
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button><Plus className="h-4 w-4" /> Add Wallet</Button>
+              </DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>New Wallet</DialogTitle></DialogHeader><WalletForm /></DialogContent>
+            </Dialog>
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {wallets.map((w) => (

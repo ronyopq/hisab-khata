@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Drawer } from "vaul";
 import { motion } from "motion/react";
@@ -38,9 +38,9 @@ export function QuickAddSheet({ open, onOpenChange, wallets, categories, default
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (open && !walletId && wallets.length) setWalletId(defaultWalletId ?? wallets[0].id);
-  }, [open, wallets, defaultWalletId, walletId]);
+  // Derived default: no effect needed, so opening the sheet never causes a
+  // cascading render (and the first render already has a wallet selected).
+  const effectiveWalletId = walletId || defaultWalletId || wallets[0]?.id || "";
 
   const filteredCats = categories.filter((c) => c.type === type);
 
@@ -55,14 +55,14 @@ export function QuickAddSheet({ open, onOpenChange, wallets, categories, default
   const handleSave = async () => {
     const paisa = parseMoneyToPaisa(amount);
     if (!paisa || paisa <= BigInt(0)) { toast.error("Enter amount"); return; }
-    if (!walletId) { toast.error("Select wallet"); return; }
-    if (type === "transfer" && (!toWalletId || toWalletId === walletId)) { toast.error("Select destination wallet"); return; }
+    if (!effectiveWalletId) { toast.error("Select wallet"); return; }
+    if (type === "transfer" && (!toWalletId || toWalletId === effectiveWalletId)) { toast.error("Select destination wallet"); return; }
     if (type !== "transfer" && !categoryId) { toast.error("Select category"); return; }
     setLoading(true);
     const payload = {
       type,
       amountPaisa: paisa,
-      walletId,
+      walletId: effectiveWalletId,
       toWalletId: type === "transfer" ? toWalletId : undefined,
       categoryId: type === "transfer" ? null : categoryId,
       occurredAt: new Date(date + "T12:00:00"),
@@ -75,7 +75,7 @@ export function QuickAddSheet({ open, onOpenChange, wallets, categories, default
         await queueTransaction({
           type: payload.type,
           amountPaisa: paisa.toString(),
-          walletId,
+          walletId: effectiveWalletId,
           toWalletId: payload.toWalletId,
           categoryId: payload.categoryId,
           occurredAt: payload.occurredAt.toISOString(),
@@ -110,7 +110,7 @@ export function QuickAddSheet({ open, onOpenChange, wallets, categories, default
           await queueTransaction({
             type: payload.type,
             amountPaisa: paisa.toString(),
-            walletId,
+            walletId: effectiveWalletId,
             toWalletId: payload.toWalletId,
             categoryId: payload.categoryId,
             occurredAt: payload.occurredAt.toISOString(),
@@ -180,7 +180,7 @@ export function QuickAddSheet({ open, onOpenChange, wallets, categories, default
             <div className="mt-4 space-y-3">
               <div className="space-y-2">
                 <Label>{type === "transfer" ? t("fromWallet") : t("wallet")}</Label>
-                <Select value={walletId} onValueChange={setWalletId}>
+                <Select value={effectiveWalletId} onValueChange={setWalletId}>
                   <SelectTrigger><SelectValue placeholder="Select wallet" /></SelectTrigger>
                   <SelectContent>{wallets.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
                 </Select>
@@ -190,7 +190,7 @@ export function QuickAddSheet({ open, onOpenChange, wallets, categories, default
                   <Label>{t("toWallet")}</Label>
                   <Select value={toWalletId} onValueChange={setToWalletId}>
                     <SelectTrigger><SelectValue placeholder="Select destination" /></SelectTrigger>
-                    <SelectContent>{wallets.filter((w) => w.id !== walletId).map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>{wallets.filter((w) => w.id !== effectiveWalletId).map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               )}

@@ -72,7 +72,9 @@
     "lastMonth": "Last Month",
     "thisYear": "This Year",
     "customRange": "Custom Range",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "from": "From",
+    "to": "To"
   },
   "transactions": {
     "title": "Transactions",
@@ -83,7 +85,8 @@
     "empty": "No transactions found",
     "emptyCta": "Add your first transaction",
     "undoDelete": "Deleted",
-    "undo": "Undo"
+    "undo": "Undo",
+    "searchAction": "Search"
   },
   "quickAdd": {
     "title": "New Transaction",
@@ -134,7 +137,8 @@
     "appLock": "App Lock",
     "export": "Export",
     "import": "Import",
-    "deleteAccount": "Delete Account"
+    "deleteAccount": "Delete Account",
+    "saved": "Saved"
   },
   "validation": {
     "required": "This field is required",

@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,12 +11,32 @@ export function EmptyState({
   description,
   actionLabel,
   onAction,
+  actionHref,
+  actionSlot,
 }: {
   title: string;
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** Link target for the CTA (e.g. a page that hosts the create form). */
+  actionHref?: string;
+  /** Any trigger element, e.g. a DialogTrigger wrapping the create button. */
+  actionSlot?: ReactNode;
 }) {
+  // Only render a CTA that can actually do something — the old version showed a
+  // button on every empty state and most of them had no handler at all.
+  const cta = actionSlot ?? (
+    actionHref && actionLabel ? (
+      <Button className="mt-5" asChild>
+        <Link href={actionHref}>{actionLabel}</Link>
+      </Button>
+    ) : onAction && actionLabel ? (
+      <Button className="mt-5" onClick={onAction}>
+        {actionLabel}
+      </Button>
+    ) : null
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -26,11 +48,7 @@ export function EmptyState({
       </span>
       <h3 className="mt-4 text-lg font-semibold">{title}</h3>
       {description && <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>}
-      {actionLabel && (
-        <Button className="mt-5" onClick={onAction}>
-          {actionLabel}
-        </Button>
-      )}
+      {cta && <div className="mt-5">{cta}</div>}
     </motion.div>
   );
 }

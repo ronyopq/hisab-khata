@@ -45,9 +45,11 @@ export function TopBar({
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    setGreeting(getGreeting());
     const supabase = createClient();
     (async () => {
+      // Greeting depends on the client clock, so it is set after mount rather
+      // than during render (which would make SSR and hydration disagree).
+      setGreeting(getGreeting());
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { count } = await supabase.from("notifications").select("*", { count: "exact", head: true }).eq("user_id", user.id).is("read_at", null);

@@ -16,13 +16,20 @@ import { TransactionRow } from "@/components/transactions/TransactionRow";
 import { formatDate } from "@/lib/format/date";
 import Link from "next/link";
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string; from?: string; to?: string }>;
+}) {
   const t = await getTranslations("dashboard");
   const params = await searchParams;
-  const period = (params.period as "thisMonth" | "lastMonth" | "thisYear" | "custom") ?? "thisMonth";
+  const validPeriods = ["thisMonth", "lastMonth", "thisYear", "custom"] as const;
+  const period = validPeriods.includes(params.period as never)
+    ? (params.period as (typeof validPeriods)[number])
+    : "thisMonth";
 
   const [summary, trend, total, wallets, upcoming, debts, goals, budgets, recent] = await Promise.all([
-    getDashboardSummary(period),
+    getDashboardSummary(period, params.from, params.to),
     getMonthlyTrend(6),
     getTotalBalance(),
     getWallets(),
@@ -49,13 +56,37 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-5">
-      {/* Period selector */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-        {([["thisMonth", t("thisMonth")], ["lastMonth", t("lastMonth")], ["thisYear", t("thisYear")], ["custom", t("customRange")]] as const).map(([key, label]) => (
+      {/* Period selector — a plain GET form so a custom range can actually be picked. */}
+      <div className="flex flex-wrap items-center gap-2">
+        {([["thisMonth", t("thisMonth")], ["lastMonth", t("lastMonth")], ["thisYear", t("thisYear")]] as const).map(([key, label]) => (
           <Link key={key} href={`/dashboard?period=${key}`} className={period === key ? "shrink-0 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground min-h-10" : "shrink-0 rounded-full border px-4 py-2 text-sm font-medium min-h-10"}>
             {label}
           </Link>
         ))}
+        <form action="/dashboard" method="get" className="flex flex-wrap items-center gap-2">
+          <input type="hidden" name="period" value="custom" />
+          <input
+            type="date"
+            name="from"
+            defaultValue={params.from ?? ""}
+            aria-label={t("from")}
+            className="h-10 rounded-xl border bg-background px-3 text-sm"
+          />
+          <span className="text-sm text-muted-foreground">→</span>
+          <input
+            type="date"
+            name="to"
+            defaultValue={params.to ?? ""}
+            aria-label={t("to")}
+            className="h-10 rounded-xl border bg-background px-3 text-sm"
+          />
+          <button
+            type="submit"
+            className={period === "custom" ? "rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground min-h-10" : "rounded-full border px-4 py-2 text-sm font-medium min-h-10"}
+          >
+            {t("customRange")}
+          </button>
+        </form>
       </div>
 
       <HeroBalance total={total} />
@@ -181,7 +212,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <section>
         <h2 className="mb-3 font-semibold">{t("recentTransactions")}</h2>
         {recent.length === 0 ? (
-          <EmptyState title="No transactions yet" description="Add your first expense or income." actionLabel="Add Transaction" />
+          <EmptyState title="No transactions yet" description="Add your first expense or income from the + button, or press N." />
         ) : (
           <div className="space-y-5">
             {Array.from(groupedRecent.entries()).map(([day, txs]) => (

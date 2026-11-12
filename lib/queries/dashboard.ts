@@ -8,18 +8,47 @@ export interface DashboardSummary {
   daily: { day: string; income: string; expense: string }[];
 }
 
-export function getPeriodRange(period: "thisMonth" | "lastMonth" | "thisYear" | "custom", customFrom?: string, customTo?: string) {
-  const now = new Date();
+/**
+ * Month boundaries are computed in Dhaka (UTC+6), not UTC. A 00:30 Dhaka
+ * expense on the 1st was previously counted in the previous month.
+ */
+const DHAKA_OFFSET_MS = 6 * 60 * 60 * 1000;
+
+function dhakaParts(now = new Date()) {
+  const shifted = new Date(now.getTime() + DHAKA_OFFSET_MS);
+  return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth() };
+}
+
+/** Midnight Dhaka on the given year/month/day, expressed as a UTC ISO string. */
+function dhakaMidnight(year: number, month: number, day = 1): string {
+  return new Date(Date.UTC(year, month, day) - DHAKA_OFFSET_MS).toISOString();
+}
+
+export function getPeriodRange(
+  period: "thisMonth" | "lastMonth" | "thisYear" | "custom",
+  customFrom?: string,
+  customTo?: string
+) {
+  const { year, month } = dhakaParts();
+
   if (period === "thisMonth") {
-    return { from: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(), to: new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString() };
+    return { from: dhakaMidnight(year, month), to: dhakaMidnight(year, month + 1) };
   }
   if (period === "lastMonth") {
-    return { from: new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString(), to: new Date(now.getFullYear(), now.getMonth(), 1).toISOString() };
+    return { from: dhakaMidnight(year, month - 1), to: dhakaMidnight(year, month) };
   }
   if (period === "thisYear") {
-    return { from: new Date(now.getFullYear(), 0, 1).toISOString(), to: new Date(now.getFullYear() + 1, 0, 1).toISOString() };
+    return { from: dhakaMidnight(year, 0), to: dhakaMidnight(year + 1, 0) };
   }
-  return { from: new Date(customFrom ?? now.toISOString()).toISOString(), to: new Date(customTo ?? now.toISOString()).toISOString() };
+
+  // Custom: a single day when only `from` is given; never a zero-length range.
+  const fromDate = customFrom ? new Date(`${customFrom}T00:00:00+06:00`) : new Date();
+  const toDate = customTo ? new Date(`${customTo}T23:59:59.999+06:00`) : null;
+  const start = Number.isNaN(fromDate.getTime()) ? new Date() : fromDate;
+  const end = toDate && !Number.isNaN(toDate.getTime())
+    ? toDate
+    : new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1);
+  return { from: start.toISOString(), to: end.toISOString() };
 }
 
 export async function getDashboardSummary(period: "thisMonth" | "lastMonth" | "thisYear" | "custom" = "thisMonth", customFrom?: string, customTo?: string): Promise<DashboardSummary | null> {
