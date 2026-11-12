@@ -212,7 +212,7 @@ export default async function DashboardPage({
       <section>
         <h2 className="mb-3 font-semibold">{t("recentTransactions")}</h2>
         {recent.length === 0 ? (
-          <EmptyState title="No transactions yet" description="Add your first expense or income from the + button, or press N." />
+          <EmptyState title={t("noTxTitle")} description={t("noTxDesc")} />
         ) : (
           <div className="space-y-5">
             {Array.from(groupedRecent.entries()).map(([day, txs]) => (

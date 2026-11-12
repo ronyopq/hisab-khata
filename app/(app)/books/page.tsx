@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/layout/EmptyState";
 
 export default async function BooksPage() {
   const t = await getTranslations("nav");
+  const p = await getTranslations("pages.books");
   const [myBooks, activeBook] = await Promise.all([getMyBooks(), getActiveBook()]);
   const members = activeBook ? await getBookMembers(activeBook.id) : [];
   const invites = activeBook ? await getBookInvites(activeBook.id) : [];
@@ -25,19 +26,19 @@ export default async function BooksPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("books")}</h1>
         <Dialog>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> New Book</Button></DialogTrigger>
-          <DialogContent><DialogHeader><DialogTitle>New Book</DialogTitle></DialogHeader><BookForm /></DialogContent>
+          <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> {p("add")}</Button></DialogTrigger>
+          <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><BookForm /></DialogContent>
         </Dialog>
       </div>
 
       {myBooks.length === 0 ? (
         <EmptyState
-          title="No books"
-          description="Create your first book."
+          title={p("emptyTitle")}
+          description={p("emptyDesc")}
           actionSlot={
             <Dialog>
-              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> New Book</Button></DialogTrigger>
-              <DialogContent><DialogHeader><DialogTitle>New Book</DialogTitle></DialogHeader><BookForm /></DialogContent>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> {p("add")}</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><BookForm /></DialogContent>
             </Dialog>
           }
         />

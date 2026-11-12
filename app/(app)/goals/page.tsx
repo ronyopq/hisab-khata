@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/layout/EmptyState";
 
 export default async function GoalsPage() {
   const t = await getTranslations("nav");
+  const p = await getTranslations("pages.goals");
   const { goals, generatedAt } = await getGoals();
 
   return (
@@ -19,18 +20,18 @@ export default async function GoalsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("goals")}</h1>
         <Dialog>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Goal</Button></DialogTrigger>
-          <DialogContent><DialogHeader><DialogTitle>New Goal</DialogTitle></DialogHeader><GoalForm /></DialogContent>
+          <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> {p("add")}</Button></DialogTrigger>
+          <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><GoalForm /></DialogContent>
         </Dialog>
       </div>
       {goals.length === 0 ? (
         <EmptyState
-          title="No goals"
-          description="Set savings targets with deadlines and monthly requirements."
+          title={p("emptyTitle")}
+          description={p("emptyDesc")}
           actionSlot={
             <Dialog>
-              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Goal</Button></DialogTrigger>
-              <DialogContent><DialogHeader><DialogTitle>New Goal</DialogTitle></DialogHeader><GoalForm /></DialogContent>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> {p("add")}</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><GoalForm /></DialogContent>
             </Dialog>
           }
         />

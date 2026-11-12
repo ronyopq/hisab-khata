@@ -159,8 +159,8 @@ export function TransactionsClient({
           </Button>
         </div>
         <EmptyState
-          title={activeFilterCount > 0 ? "No matching transactions" : t("empty")}
-          description={activeFilterCount > 0 ? "Try clearing a filter." : t("emptyCta")}
+          title={activeFilterCount > 0 ? t("noMatch") : t("empty")}
+          description={activeFilterCount > 0 ? t("emptyCta") : t("emptyCta")}
           actionLabel={activeFilterCount > 0 ? "Clear filters" : undefined}
           onAction={activeFilterCount > 0 ? () => applyFilters({}) : undefined}
         />

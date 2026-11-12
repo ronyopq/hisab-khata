@@ -86,7 +86,8 @@
     "emptyCta": "Add your first transaction",
     "undoDelete": "Deleted",
     "undo": "Undo",
-    "searchAction": "Search"
+    "searchAction": "Search",
+    "noMatch": "No matching transactions"
   },
   "quickAdd": {
     "title": "New Transaction",
@@ -149,5 +150,79 @@
   "sync": {
     "synced": "{count} transaction(s) synced",
     "syncFailed": "{count} failed to sync — will retry"
+  },
+  "pages": {
+    "wallets": {
+      "emptyTitle": "No wallets yet",
+      "emptyDesc": "Add Cash, Bank, bKash, Nagad, Rocket, Upay, Card or Savings.",
+      "add": "Add Wallet",
+      "newTitle": "New Wallet",
+      "presets": "Presets",
+      "name": "Name",
+      "type": "Type",
+      "balance": "Balance",
+      "archive": "Archive",
+      "transfer": "Transfer"
+    },
+    "budgets": {
+      "emptyTitle": "No budgets",
+      "emptyDesc": "Set monthly overall or per-category budgets with 80%/100% alerts.",
+      "add": "Add Budget",
+      "newTitle": "New Budget"
+    },
+    "goals": {
+      "emptyTitle": "No goals",
+      "emptyDesc": "Set savings targets with deadlines and monthly requirements.",
+      "add": "Add Goal",
+      "newTitle": "New Goal",
+      "contribution": "Add Contribution",
+      "saved": "Saved",
+      "needed": "/month needed"
+    },
+    "loans": {
+      "emptyTitle": "No loans",
+      "emptyDesc": "Track lent and borrowed money with partial repayments.",
+      "add": "Add Loan",
+      "newTitle": "New Loan",
+      "contact": "Contact",
+      "newContact": "New Contact",
+      "lent": "Lent (receivable)",
+      "borrowed": "Borrowed (payable)",
+      "remaining": "Remaining",
+      "paid": "Paid",
+      "payment": "Repayment",
+      "addPayment": "Add Payment",
+      "due": "Due",
+      "settle": "Settle"
+    },
+    "recurring": {
+      "emptyTitle": "No recurring rules",
+      "emptyDesc": "Salary, rent, bills, subscriptions — auto-create or remind.",
+      "add": "Add Recurring",
+      "newTitle": "New Recurring"
+    },
+    "books": {
+      "emptyTitle": "No books",
+      "emptyDesc": "Create your first book.",
+      "add": "New Book",
+      "newTitle": "New Book",
+      "invite": "Invite member",
+      "members": "Members",
+      "leave": "Leave book",
+      "transfer": "Transfer ownership"
+    },
+    "dashboard": {
+      "noTxTitle": "No transactions yet",
+      "noTxDesc": "Add your first expense or income with the + button, or press N."
+    },
+    "common": {
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save",
+      "search": "Search",
+      "clear": "Clear",
+      "apply": "Apply",
+      "close": "Close"
+    }
   }
 }

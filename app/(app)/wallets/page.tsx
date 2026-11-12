@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/layout/EmptyState";
 
 export default async function WalletsPage() {
   const t = await getTranslations("nav");
+  const p = await getTranslations("pages.wallets");
   const wallets = await getWallets();
 
   return (
@@ -19,22 +20,22 @@ export default async function WalletsPage() {
         <h1 className="text-2xl font-bold">{t("wallets")}</h1>
         <Dialog>
           <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4" /> Add Wallet</Button>
+            <Button><Plus className="h-4 w-4" /> {p("add")}</Button>
           </DialogTrigger>
-          <DialogContent><DialogHeader><DialogTitle>New Wallet</DialogTitle></DialogHeader><WalletForm /></DialogContent>
+          <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><WalletForm /></DialogContent>
         </Dialog>
       </div>
 
       {wallets.length === 0 ? (
         <EmptyState
-          title="No wallets yet"
-          description="Add Cash, Bank, bKash, Nagad, Rocket, Upay, Card or Savings."
+          title={p("emptyTitle")}
+          description={p("emptyDesc")}
           actionSlot={
             <Dialog>
               <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4" /> Add Wallet</Button>
+                <Button><Plus className="h-4 w-4" /> {p("add")}</Button>
               </DialogTrigger>
-              <DialogContent><DialogHeader><DialogTitle>New Wallet</DialogTitle></DialogHeader><WalletForm /></DialogContent>
+              <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><WalletForm /></DialogContent>
             </Dialog>
           }
         />

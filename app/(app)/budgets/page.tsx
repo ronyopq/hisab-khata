@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/layout/EmptyState";
 
 export default async function BudgetsPage() {
   const t = await getTranslations("nav");
+  const p = await getTranslations("pages.budgets");
   const [budgets, categories] = await Promise.all([getBudgets(), getCategories("expense")]);
 
   return (
@@ -19,18 +20,18 @@ export default async function BudgetsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("budgets")}</h1>
         <Dialog>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Budget</Button></DialogTrigger>
-          <DialogContent><DialogHeader><DialogTitle>New Budget</DialogTitle></DialogHeader><BudgetForm categories={categories as never} /></DialogContent>
+          <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> {p("add")}</Button></DialogTrigger>
+          <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><BudgetForm categories={categories as never} /></DialogContent>
         </Dialog>
       </div>
       {budgets.length === 0 ? (
         <EmptyState
-          title="No budgets"
-          description="Set monthly overall or per-category budgets with 80%/100% alerts."
+          title={p("emptyTitle")}
+          description={p("emptyDesc")}
           actionSlot={
             <Dialog>
-              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Budget</Button></DialogTrigger>
-              <DialogContent><DialogHeader><DialogTitle>New Budget</DialogTitle></DialogHeader><BudgetForm categories={categories as never} /></DialogContent>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> {p("add")}</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><BudgetForm categories={categories as never} /></DialogContent>
             </Dialog>
           }
         />

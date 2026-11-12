@@ -13,32 +13,33 @@ import { EmptyState } from "@/components/layout/EmptyState";
 
 export default async function LoansPage() {
   const t = await getTranslations("nav");
+  const p = await getTranslations("pages.loans");
   const [contacts, debts, wallets] = await Promise.all([getContacts(), getDebts(), getWalletsWithMeta()]);
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t("loans")} (ধার-দেনা)</h1>
+        <h1 className="text-2xl font-bold">{t("loans")}</h1>
         <div className="flex gap-2">
           <Dialog>
-            <DialogTrigger asChild><Button variant="outline">Contact</Button></DialogTrigger>
-            <DialogContent><DialogHeader><DialogTitle>New Contact</DialogTitle></DialogHeader><ContactForm /></DialogContent>
+            <DialogTrigger asChild><Button variant="outline">{p("contact")}</Button></DialogTrigger>
+            <DialogContent><DialogHeader><DialogTitle>{p("newContact")}</DialogTitle></DialogHeader><ContactForm /></DialogContent>
           </Dialog>
           <Dialog>
-            <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Loan</Button></DialogTrigger>
-            <DialogContent><DialogHeader><DialogTitle>New Loan</DialogTitle></DialogHeader><DebtForm contacts={contacts as never} wallets={wallets as never} /></DialogContent>
+            <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> {p("add")}</Button></DialogTrigger>
+            <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><DebtForm contacts={contacts as never} wallets={wallets as never} /></DialogContent>
           </Dialog>
         </div>
       </div>
 
       {debts.length === 0 ? (
         <EmptyState
-          title="No loans"
-          description="Track পাওনা (lent) and দেনা (borrowed) with partial repayments."
+          title={p("emptyTitle")}
+          description={p("emptyDesc")}
           actionSlot={
             <Dialog>
-              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Loan</Button></DialogTrigger>
-              <DialogContent><DialogHeader><DialogTitle>New Loan</DialogTitle></DialogHeader><DebtForm contacts={contacts as never} wallets={wallets as never} /></DialogContent>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> {p("add")}</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><DebtForm contacts={contacts as never} wallets={wallets as never} /></DialogContent>
             </Dialog>
           }
         />
@@ -53,20 +54,20 @@ export default async function LoansPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold">{debt.contacts?.name ?? "Contact"}</p>
-                      <p className="text-xs text-muted-foreground">{debt.direction === "lent" ? "পাওনা (Lent)" : "দেনা (Borrowed)"} {debt.due_at ? `• Due ${formatDate(debt.due_at)}` : ""}</p>
+                      <p className="text-xs text-muted-foreground">{debt.direction === "lent" ? p("lent") : p("borrowed")} {debt.due_at ? `• Due ${formatDate(debt.due_at)}` : ""}</p>
                     </div>
                     <Badge variant={debt.status === "settled" ? "secondary" : "default"}>{debt.status}</Badge>
                   </div>
                   <div className="mt-3 flex items-end justify-between">
                     <div>
-                      <p className="text-xs text-muted-foreground">Remaining</p>
+                      <p className="text-xs text-muted-foreground">{p("remaining")}</p>
                       <p className="tabular text-xl font-bold">{formatMoney(BigInt(d.remaining))}</p>
-                      <p className="text-xs text-muted-foreground">Paid {formatMoney(BigInt(d.paid))} / {formatMoney(BigInt(d.principal))}</p>
+                      <p className="text-xs text-muted-foreground">{p("paid")} {formatMoney(BigInt(d.paid))} / {formatMoney(BigInt(d.principal))}</p>
                     </div>
                     {debt.status !== "settled" && (
                       <Dialog>
-                        <DialogTrigger asChild><Button size="sm">Add Payment</Button></DialogTrigger>
-                        <DialogContent><DialogHeader><DialogTitle>Repayment</DialogTitle></DialogHeader><PaymentForm debtId={debtId} /></DialogContent>
+                        <DialogTrigger asChild><Button size="sm">{p("addPayment")}</Button></DialogTrigger>
+                        <DialogContent><DialogHeader><DialogTitle>{p("payment")}</DialogTitle></DialogHeader><PaymentForm debtId={debtId} /></DialogContent>
                       </Dialog>
                     )}
                   </div>

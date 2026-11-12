@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/layout/EmptyState";
 
 export default async function RecurringPage() {
   const t = await getTranslations("nav");
+  const p = await getTranslations("pages.recurring");
   const [rules, wallets, categories] = await Promise.all([getRecurring(), getWalletsWithMeta(), getCategories()]);
 
   return (
@@ -21,18 +22,18 @@ export default async function RecurringPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("recurring")}</h1>
         <Dialog>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Recurring</Button></DialogTrigger>
-          <DialogContent><DialogHeader><DialogTitle>New Recurring</DialogTitle></DialogHeader><RecurringForm wallets={wallets as never} categories={categories as never} /></DialogContent>
+          <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> {p("add")}</Button></DialogTrigger>
+          <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><RecurringForm wallets={wallets as never} categories={categories as never} /></DialogContent>
         </Dialog>
       </div>
       {rules.length === 0 ? (
         <EmptyState
-          title="No recurring rules"
-          description="Salary, rent, bills, subscriptions — auto-create or remind."
+          title={p("emptyTitle")}
+          description={p("emptyDesc")}
           actionSlot={
             <Dialog>
-              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Add Recurring</Button></DialogTrigger>
-              <DialogContent><DialogHeader><DialogTitle>New Recurring</DialogTitle></DialogHeader><RecurringForm wallets={wallets as never} categories={categories as never} /></DialogContent>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> {p("add")}</Button></DialogTrigger>
+              <DialogContent><DialogHeader><DialogTitle>{p("newTitle")}</DialogTitle></DialogHeader><RecurringForm wallets={wallets as never} categories={categories as never} /></DialogContent>
             </Dialog>
           }
         />
